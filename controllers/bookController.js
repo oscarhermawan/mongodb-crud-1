@@ -40,20 +40,29 @@ methods.getAllBooks = function(req,res){
 methods.updateBook = function(req,res){
   MongoClient.connect(url, function(err,db){
     var collection = db.collection('books')
-    collection.updateOne({"_id" : ObjectId(req.params.id)}, { $set: {
-      isbn:req.body.isbn,
-      title:req.body.title,
-      author:req.body.author,
-      category:req.body.category,
-      stock:req.body.stock
-    }}, function(err, result){
+    collection.find({"_id" : ObjectId(req.params.id)}).toArray(function(err, result){
       if(!err){
-        res.send(result)
+        console.log(result[0]);
+        collection.updateOne({"_id" : ObjectId(req.params.id)}, { $set: {
+          isbn:req.body.isbn || result[0].isbn,
+          title:req.body.title || result[0].title,
+          author:req.body.author || result[0].author,
+          category:req.body.category || result[0].category,
+          stock:req.body.stock || result[0].stock
+        }}, function(error, dataUpdate){
+          if(!error){
+            res.send(dataUpdate)
+            db.close();
+          } else {
+            res.send(error)
+            db.close();
+          }
+        })
       } else {
         res.send(err)
+        db.close();
       }
     })
-    db.close();
   })
 }
 
